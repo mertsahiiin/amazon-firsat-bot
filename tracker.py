@@ -27,3 +27,4 @@ response = requests.post(api_url, data={"chat_id": CHAT_ID, "text": message})
 
 print("Status:", response.status_code)
 print("Response:", response.text)
+print("versıon_999")
