@@ -11,30 +11,15 @@ CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 DB_FILE = "prices.json"
 
 SEARCHES = [
-    "iPhone 17 Pro Max 256GB",
-    "iPhone 17 Pro Max 512GB",
-    "iPhone 17 Pro Max 1TB",
-    "iPhone 17 Pro 256GB",
-    "iPhone 17 Pro 512GB",
-    "iPhone 17 Pro 1TB",
-    "iPhone 17 256GB",
-    "iPhone 17 512GB",
-    "iPhone 17 1TB",
-    "iPhone 16 Pro Max 256GB",
-    "iPhone 16 Pro Max 512GB",
-    "iPhone 16 Pro Max 1TB",
-    "iPhone 16 Pro 256GB",
-    "iPhone 16 Pro 512GB",
-    "iPhone 16 Pro 1TB",
-    "iPhone 16 256GB",
-    "iPhone 16 512GB",
-    "iPhone 16 1TB",
-    "Apple MacBook",
-    "Apple Watch Series",
-    "Huawei Watch Fit 5 Pro",
-    "Huawei Watch Fit 4 Pro",
-    "Huawei Watch Fit 5",
-    "Huawei Watch Fit 4"
+    "iPhone 17 Pro Max",
+    "iPhone 17 Pro",
+    "iPhone 17",
+    "iPhone 16 Pro Max",
+    "iPhone 16 Pro",
+    "iPhone 16",
+    "Apple Watch",
+    "MacBook",
+    "Huawei Watch Fit"
 ]
 
 HEADERS = {
@@ -61,6 +46,7 @@ def load_prices():
     if not os.path.exists(DB_FILE):
         print("prices.json yok, ilk tarama.")
         return {}
+
     with open(DB_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -72,23 +58,34 @@ def title_matches_query(title, query):
     t = title.lower()
     q = query.lower()
 
-    if "iphone" in q and "iphone" not in t:
-        return False
-    if "macbook" in q and "macbook" not in t:
-        return False
-    if "apple watch" in q and "apple watch" not in t:
-        return False
-    if "huawei watch" in q and "huawei" not in t:
-        return False
+    if "iphone 17 pro max" in q:
+        return "iphone 17 pro max" in t
 
-    important_words = q.replace("gb", " gb").split()
-    for word in important_words:
-        if word in ["apple", "watch", "series", "huawei"]:
-            continue
-        if word not in t:
-            return False
+    if "iphone 17 pro" in q:
+        return "iphone 17 pro" in t and "max" not in t
 
-    return True
+    if "iphone 17" in q:
+        return "iphone 17" in t and "pro" not in t
+
+    if "iphone 16 pro max" in q:
+        return "iphone 16 pro max" in t
+
+    if "iphone 16 pro" in q:
+        return "iphone 16 pro" in t and "max" not in t
+
+    if "iphone 16" in q:
+        return "iphone 16" in t and "pro" not in t
+
+    if "apple watch" in q:
+        return "apple watch" in t
+
+    if "macbook" in q:
+        return "macbook" in t
+
+    if "huawei watch fit" in q:
+        return "huawei" in t and "watch" in t and "fit" in t
+
+    return False
 
 old_prices = load_prices()
 new_prices = dict(old_prices)
