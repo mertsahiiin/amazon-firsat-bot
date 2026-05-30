@@ -10,15 +10,32 @@ CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 DB_FILE = "prices.json"
 
 SEARCHES = [
-    "Apple AirPods",
-    "Apple Watch",
-    "Apple iPhone",
-    "Apple iPad",
+    "iPhone 17 Pro Max 256GB",
+    "iPhone 17 Pro Max 512GB",
+    "iPhone 17 Pro Max 1TB",
+    "iPhone 17 Pro 256GB",
+    "iPhone 17 Pro 512GB",
+    "iPhone 17 Pro 1TB",
+    "iPhone 17 256GB",
+    "iPhone 17 512GB",
+    "iPhone 17 1TB",
+
+    "iPhone 16 Pro Max 256GB",
+    "iPhone 16 Pro Max 512GB",
+    "iPhone 16 Pro Max 1TB",
+    "iPhone 16 Pro 256GB",
+    "iPhone 16 Pro 512GB",
+    "iPhone 16 Pro 1TB",
+    "iPhone 16 256GB",
+    "iPhone 16 512GB",
+    "iPhone 16 1TB",
+
     "Apple MacBook",
-    "Huawei Watch",
-    "Huawei telefon",
-    "Huawei tablet",
-    "Huawei FreeBuds"
+    "Apple Watch Series",
+    "Huawei Watch Fit 5 Pro",
+    "Huawei Watch Fit 4 Pro",
+    "Huawei Watch Fit 5",
+    "Huawei Watch Fit 4"
 ]
 
 HEADERS = {
