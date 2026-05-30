@@ -142,3 +142,37 @@ for query in SEARCHES:
 
             if key in old_prices:
                 old_price = old_prices[key]["price"]
+if key in old_prices:
+                old_price = old_prices[key]["price"]
+
+                if price_num < old_price:
+                    discount = round(((old_price - price_num) / old_price) * 100, 1)
+
+                    alerts.append(
+                        f"🔥 Amazon fiyat düştü! %{discount}\n\n"
+                        f"📦 {title}\n"
+                        f"Eski fiyat: {old_prices[key]['price_text']}\n"
+                        f"Yeni fiyat: {price_text}\n"
+                        f"🔗 {link}"
+                    )
+
+            new_prices[key] = {
+                "title": title,
+                "price": price_num,
+                "price_text": price_text,
+                "link": link
+            }
+
+        time.sleep(3)
+
+    except Exception as e:
+        print("Hata:", query, e)
+
+save_prices(new_prices)
+
+if alerts:
+    send_telegram("📉 Amazon Apple / Huawei indirim bildirimi\n\n" + "\n\n".join(alerts[:5]))
+else:
+    print("Yeni indirim yok, mesaj gönderilmedi.")
+
+print("Tamamlandi")
