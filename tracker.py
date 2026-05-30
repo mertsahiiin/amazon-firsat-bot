@@ -20,7 +20,6 @@ SEARCHES = [
     "iPhone 17 256GB",
     "iPhone 17 512GB",
     "iPhone 17 1TB",
-
     "iPhone 16 Pro Max 256GB",
     "iPhone 16 Pro Max 512GB",
     "iPhone 16 Pro Max 1TB",
@@ -30,7 +29,6 @@ SEARCHES = [
     "iPhone 16 256GB",
     "iPhone 16 512GB",
     "iPhone 16 1TB",
-
     "Apple MacBook",
     "Apple Watch Series",
     "Huawei Watch Fit 5 Pro",
@@ -76,8 +74,6 @@ def title_matches_query(title, query):
 
     if "iphone" in q and "iphone" not in t:
         return False
-    if "airpods" in q and "airpods" not in t:
-        return False
     if "macbook" in q and "macbook" not in t:
         return False
     if "apple watch" in q and "apple watch" not in t:
@@ -85,10 +81,11 @@ def title_matches_query(title, query):
     if "huawei watch" in q and "huawei" not in t:
         return False
 
-    for part in q.replace("gb", " gb").split():
-        if part in ["apple", "watch", "series", "huawei"]:
+    important_words = q.replace("gb", " gb").split()
+    for word in important_words:
+        if word in ["apple", "watch", "series", "huawei"]:
             continue
-        if part not in t:
+        if word not in t:
             return False
 
     return True
@@ -141,8 +138,6 @@ for query in SEARCHES:
             print("Fiyat:", price_text)
 
             if key in old_prices:
-                old_price = old_prices[key]["price"]
-if key in old_prices:
                 old_price = old_prices[key]["price"]
 
                 if price_num < old_price:
