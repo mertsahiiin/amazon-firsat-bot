@@ -1,9 +1,10 @@
 import os
 import json
 import re
+import time
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import quote_plus, urljoin
+from urllib.parse import quote_plus
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
@@ -39,8 +40,9 @@ SEARCHES = [
 ]
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
     "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
 def send_telegram(text):
@@ -49,11 +51,13 @@ def send_telegram(text):
     print("Telegram status:", r.status_code)
     print("Telegram response:", r.text)
 
-def price_to_number(text):
-    match = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2})", text)
-    if not match:
+def price_to_number(price_text):
+    cleaned = re.sub(r"[^\d,]", "", price_text)
+    cleaned = cleaned.replace(".", "").replace(",", ".")
+    try:
+        return float(cleaned)
+    except:
         return None
-    return float(match.group(1).replace(".", "").replace(",", "."))
 
 def load_prices():
     if not os.path.exists(DB_FILE):
@@ -66,87 +70,75 @@ def save_prices(data):
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
+def title_matches_query(title, query):
+    t = title.lower()
+    q = query.lower()
+
+    if "iphone" in q and "iphone" not in t:
+        return False
+    if "airpods" in q and "airpods" not in t:
+        return False
+    if "macbook" in q and "macbook" not in t:
+        return False
+    if "apple watch" in q and "apple watch" not in t:
+        return False
+    if "huawei watch" in q and "huawei" not in t:
+        return False
+
+    for part in q.replace("gb", " gb").split():
+        if part in ["apple", "watch", "series", "huawei"]:
+            continue
+        if part not in t:
+            return False
+
+    return True
+
 old_prices = load_prices()
 new_prices = dict(old_prices)
 alerts = []
 
 for query in SEARCHES:
-    url = "https://www.epey.com/arama?q=" + quote_plus(query)
+    url = "https://www.amazon.com.tr/s?k=" + quote_plus(query)
     print("Aranıyor:", query)
 
     try:
         r = requests.get(url, headers=HEADERS, timeout=20)
-        print("Epey status:", r.status_code)
+        print("Amazon status:", r.status_code)
+
+        if r.status_code != 200:
+            print("Amazon sayfa vermedi:", r.status_code)
+            time.sleep(3)
+            continue
 
         soup = BeautifulSoup(r.text, "html.parser")
+        products = soup.select("[data-component-type='s-search-result']")[:3]
 
-        items = soup.select("li, div, article")[:500]
-        found_count = 0
+        print(query, "ürün sayısı:", len(products))
 
-        for item in items:
-            text = item.get_text(" ", strip=True)
+        for p in products:
+            title_el = p.select_one("h2 span")
+            price_el = p.select_one(".a-price .a-offscreen")
+            link_el = p.select_one("h2 a")
 
-            if "TL" not in text:
+            if not title_el or not price_el or not link_el:
                 continue
 
-            low = text.lower()
-            if "apple" not in low and "huawei" not in low:
-                continue
+            title = title_el.get_text(strip=True)
+            price_text = price_el.get_text(strip=True)
+            price_num = price_to_number(price_text)
+            link = "https://www.amazon.com.tr" + link_el.get("href")
 
-            price_num = price_to_number(text)
             if price_num is None:
                 continue
 
-            link_el = item.select_one("a[href]")
-            if not link_el:
+            if not title_matches_query(title, query):
+                print("Atlandı:", title)
                 continue
 
-            title = link_el.get_text(" ", strip=True)
-            if len(title) < 8:
-                title = text[:120]
-
-            link = urljoin("https://www.epey.com", link_el.get("href"))
-            key = title[:100]
-
-            found_count += 1
+            key = title.lower()[:120]
 
             print("Ürün:", title)
-            print("Fiyat:", price_num)
+            print("Fiyat:", price_text)
 
             if key in old_prices:
                 old_price = old_prices[key]["price"]
-
-                if price_num < old_price:
-                    discount = round(((old_price - price_num) / old_price) * 100, 1)
-
-                    alerts.append(
-                        f"🔥 Fiyat düştü! %{discount}\n\n"
-                        f"📦 {title}\n"
-                        f"Eski fiyat: {old_prices[key]['price_text']}\n"
-                        f"Yeni fiyat: {price_num:,.2f} TL\n"
-                        f"🔗 {link}"
-                    )
-
-            new_prices[key] = {
-                "title": title,
-                "price": price_num,
-                "price_text": f"{price_num:,.2f} TL",
-                "link": link
-            }
-
-            if found_count >= 5:
-                break
-
-        print(query, "bulunan ürün:", found_count)
-
-    except Exception as e:
-        print("Hata:", query, e)
-
-save_prices(new_prices)
-
-if alerts:
-    send_telegram("📉 Epey Apple / Huawei indirim bildirimi\n\n" + "\n\n".join(alerts[:5]))
-else:
-    print("Yeni indirim yok, mesaj gönderilmedi.")
-
-print("Tamamlandi")
