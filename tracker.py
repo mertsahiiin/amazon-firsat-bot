@@ -22,8 +22,8 @@ SEARCHES = [
 ]
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0",
-    "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36",
+    "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
 }
 
 def send_telegram(text):
@@ -36,8 +36,7 @@ def price_to_number(text):
     match = re.search(r"(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2})", text)
     if not match:
         return None
-    price = match.group(1).replace(".", "").replace(",", ".")
-    return float(price)
+    return float(match.group(1).replace(".", "").replace(",", "."))
 
 def load_prices():
     if not os.path.exists(DB_FILE):
@@ -55,16 +54,16 @@ new_prices = dict(old_prices)
 alerts = []
 
 for query in SEARCHES:
-    url = "https://www.akakce.com/arama/?q=" + quote_plus(query)
+    url = "https://www.epey.com/arama?q=" + quote_plus(query)
     print("Aranıyor:", query)
 
     try:
         r = requests.get(url, headers=HEADERS, timeout=20)
-        print("Akakçe status:", r.status_code)
+        print("Epey status:", r.status_code)
 
         soup = BeautifulSoup(r.text, "html.parser")
 
-        items = soup.select("li, div, article")[:300]
+        items = soup.select("li, div, article")[:500]
         found_count = 0
 
         for item in items:
@@ -86,12 +85,12 @@ for query in SEARCHES:
                 continue
 
             title = link_el.get_text(" ", strip=True)
-            if len(title) < 10:
+            if len(title) < 8:
                 title = text[:120]
 
-            link = urljoin("https://www.akakce.com", link_el.get("href"))
-
+            link = urljoin("https://www.epey.com", link_el.get("href"))
             key = title[:100]
+
             found_count += 1
 
             print("Ürün:", title)
@@ -129,7 +128,7 @@ for query in SEARCHES:
 save_prices(new_prices)
 
 if alerts:
-    send_telegram("📉 Akakçe Apple / Huawei indirim bildirimi\n\n" + "\n\n".join(alerts[:5]))
+    send_telegram("📉 Epey Apple / Huawei indirim bildirimi\n\n" + "\n\n".join(alerts[:5]))
 else:
     print("Yeni indirim yok, mesaj gönderilmedi.")
 
