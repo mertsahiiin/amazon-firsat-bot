@@ -21,14 +21,15 @@ HEADERS = {
 
 def send_telegram(text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    requests.post(
+    response = requests.post(
         url,
         data={
             "chat_id": CHAT_ID,
             "text": text
         }
     )
-
+    print("Telegram status:", response.status_code)
+    print("Telegram response:", response.text)
 found = []
 
 for query in SEARCHES:
