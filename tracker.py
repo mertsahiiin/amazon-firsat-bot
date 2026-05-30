@@ -13,12 +13,17 @@ SEARCHES = [
     "Apple AirPods",
     "Apple Watch",
     "Apple iPhone",
+    "Apple iPad",
+    "Apple MacBook",
     "Huawei Watch",
     "Huawei telefon",
+    "Huawei tablet",
     "Huawei FreeBuds"
 ]
 
-HEADERS = {"User-Agent": "Mozilla/5.0"}
+HEADERS = {
+    "User-Agent": "Mozilla/5.0"
+}
 
 def send_telegram(text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -36,6 +41,7 @@ def price_to_number(price_text):
 
 def load_prices():
     if not os.path.exists(DB_FILE):
+        print("prices.json yok, ilk tarama yapılacak.")
         return {}
     with open(DB_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
@@ -45,16 +51,19 @@ def save_prices(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 old_prices = load_prices()
-new_prices = {}
+new_prices = dict(old_prices)
 alerts = []
 
 for query in SEARCHES:
     url = "https://www.amazon.com.tr/s?k=" + quote_plus(query)
+    print("Aranıyor:", query)
 
     try:
         r = requests.get(url, headers=HEADERS, timeout=20)
         soup = BeautifulSoup(r.text, "html.parser")
         products = soup.select("[data-component-type='s-search-result']")[:5]
+
+        print(query, "ürün sayısı:", len(products))
 
         for p in products:
             title_el = p.select_one("h2 span")
@@ -72,22 +81,17 @@ for query in SEARCHES:
             if price_num is None:
                 continue
 
-            key = title[:80]
-            new_prices[key] = {
-                "title": title,
-                "price": price_num,
-                "price_text": price_text,
-                "link": link
-            }
+            key = title[:100]
 
-            if key not in old_prices:
-                alerts.append(
-                    f"🆕 Yeni ürün\n\n📦 {title}\n💰 {price_text}\n🔗 {link}"
-                )
-            else:
+            print("Ürün:", title)
+            print("Fiyat:", price_text)
+
+            if key in old_prices:
                 old_price = old_prices[key]["price"]
+
                 if price_num < old_price:
                     discount = round(((old_price - price_num) / old_price) * 100, 1)
+
                     alerts.append(
                         f"🔥 Fiyat düştü! %{discount}\n\n"
                         f"📦 {title}\n"
@@ -96,13 +100,20 @@ for query in SEARCHES:
                         f"🔗 {link}"
                     )
 
+            new_prices[key] = {
+                "title": title,
+                "price": price_num,
+                "price_text": price_text,
+                "link": link
+            }
+
     except Exception as e:
         print("Hata:", query, e)
 
 save_prices(new_prices)
 
 if alerts:
-    send_telegram("📉 Apple / Huawei fırsat bildirimi\n\n" + "\n\n".join(alerts[:5]))
+    send_telegram("📉 Apple / Huawei indirim bildirimi\n\n" + "\n\n".join(alerts[:5]))
 else:
     print("Yeni indirim yok, mesaj gönderilmedi.")
 
